@@ -21,6 +21,8 @@ st.title('Dashboard pour l\'octroi de crédits bancaires')
 #endpoint = 'http://127.0.0.1:8000/predict'
 endpoint = 'https://shielded-bastion-88611.herokuapp.com/predict' # Specify this path for Heroku deployment
 
+endpoint_lime = 'https://shielded-bastion-88611.herokuapp.com/lime'
+
 # On charge notre modèle de prévision
 model_pipeline = joblib.load('pipeline_bank_lgbm.joblib')
 
@@ -52,6 +54,7 @@ if NUM_CLIENT !='':
 	st.write("Ci-dessous les résultats de la prédiction")
 
 	client_json = {'num_client': NUM_CLIENT}
+
 	with st.spinner('Prediction in Progress. Please Wait...'):
 		output = requests.post(endpoint, json=client_json,
 						   timeout=8000)
@@ -60,6 +63,22 @@ if NUM_CLIENT !='':
 
 
 	#Bouton permettant de générer les explanations du model
+
+	st.write(features)
+
+	explain_pred_TEST = st.button('TEST Lime dans API')
+	with st.spinner('Prediction in Progress. Please Wait...'):
+		output_lime = requests.post(endpoint_lime, json=client_json,
+						   timeout=8000)
+
+	import streamlit.components.v1 as components
+	components.html(output_lime.json(), height=1000)
+	
+
+
+
+
+
 	explain_pred = st.button('Cliquer ici pour obtenir des explications')
 
 	#Si l'utilisateur appuie sur le bouton explain predictions, on lui affiche les explications
@@ -69,8 +88,8 @@ if NUM_CLIENT !='':
 			explainer = lime_tabular.LimeTabularExplainer(donnees_train,mode="classification",class_names=features)
 			exp = explainer.explain_instance(data.values[0],
 				model_pipeline.predict_proba, num_features=20)
-			mongraph_html = exp.as_html()
+			mongraph_html = exp.as_html(predict_proba=False, show_predicted_value=True)
 			import streamlit.components.v1 as components
-			components.html(mongraph_html, height=100)
+			components.html(mongraph_html, height=1000)
 
 			st.pyplot(exp.as_pyplot_figure())
