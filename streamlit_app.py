@@ -45,7 +45,7 @@ with st.sidebar:
 
 	obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
 
-if NUM_CLIENT =='100128':
+if NUM_CLIENT =='100128.00':
     #Il faudra rajouter un test pour voir si le client existe dans la base de données.
 	#ligne test qui permet d'afficher le dataframe en cas de tests unitaires
 	
