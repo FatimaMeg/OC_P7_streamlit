@@ -45,16 +45,16 @@ with st.sidebar:
 
 	obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
 
-if NUM_CLIENT =='100128.00':
+if NUM_CLIENT !='':
     #Il faudra rajouter un test pour voir si le client existe dans la base de données.
 	#ligne test qui permet d'afficher le dataframe en cas de tests unitaires
 	
+	st.write("Ci-dessous les résultats de la prédiction")
+
 	client_json = {'num_client': NUM_CLIENT}
 	with st.spinner('Prediction in Progress. Please Wait...'):
 		output = requests.post(endpoint, json=client_json,
 						   timeout=8000)
-		#result2 = num_client_scoring(model, NUM_CLIENT)
-		#st.write(result2)
 
 	st.write(output.json())
 
