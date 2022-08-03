@@ -10,7 +10,6 @@
 import joblib
 import streamlit as st
 from lime import lime_tabular
-from lime.lime_text import LimeTextExplainer
 import streamlit.components.v1 as components
 import pickle
 import matplotlib.pyplot as plt
