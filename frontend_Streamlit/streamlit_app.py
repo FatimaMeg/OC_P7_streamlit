@@ -71,6 +71,7 @@ if NUM_CLIENT !='':
 			exp = explainer.explain_instance(data.values[0],
 				model_pipeline.predict_proba, num_features=20)
 			mongraph_html = exp.as_html()
+			import streamlit.components.v1 as components
 			components.html(mongraph_html, height=100)
 
 			st.pyplot(exp.as_pyplot_figure())
