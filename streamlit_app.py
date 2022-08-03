@@ -72,7 +72,7 @@ if NUM_CLIENT !='':
 						   timeout=8000)
 
 	import streamlit.components.v1 as components
-	components.html(st.write(output_lime.json()), height=250)
+	components.html(st.write(output_lime.json()[0]), height=250)
 	
 
 
