@@ -18,8 +18,8 @@ import requests
 st.title('Dashboard pour l\'octroi de crédits bancaires')
 
 # Set FastAPI endpoint
-endpoint = 'http://127.0.0.1:8000/predict'
-#endpoint = 'http://host.docker.internal:8000/predict' # Specify this path for Dockerization to work
+#endpoint = 'http://127.0.0.1:8000/predict'
+endpoint = 'https://shielded-bastion-88611.herokuapp.com/predict' # Specify this path for Heroku deployment
 
 # On charge notre modèle de prévision
 model_pipeline = joblib.load('pipeline_bank_lgbm.joblib')
