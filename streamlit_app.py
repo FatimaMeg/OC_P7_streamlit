@@ -64,7 +64,7 @@ if NUM_CLIENT !='':
 
 	#Bouton permettant de générer les explanations du model
 
-	st.write(features)
+	#st.write(features)
 
 	explain_pred_TEST = st.button('TEST Lime dans API')
 	with st.spinner('Prediction in Progress. Please Wait...'):
@@ -72,7 +72,7 @@ if NUM_CLIENT !='':
 						   timeout=8000)
 
 	import streamlit.components.v1 as components
-	components.html(st.write(output_lime.json()), height=1000)
+	components.html(st.write(output_lime.json()), height=250)
 	
 
 
