@@ -26,9 +26,9 @@ file_features.close()
 # 3. Expose the prediction functionality, make a prediction from the passed
 #    JSON data and return the predicted classification (yes or not) with the confidence
 @app.post('/predict')
-def predict_clientscoring_features():
+def predict_clientscoring_features(client: Client):
     # On récupère les features du client
-    data = donnees_clients.loc[donnees_clients['SK_ID_CURR'] == 100028, features]
+    data = donnees_clients.loc[donnees_clients['SK_ID_CURR'] == client.num_client, features]
     prediction = model_pipeline.predict(data)[0]
     proba = model_pipeline.predict_proba(data)
 

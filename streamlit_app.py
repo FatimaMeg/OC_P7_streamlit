@@ -18,7 +18,7 @@ import requests
 st.title('Dashboard pour l\'octroi de crédits bancaires')
 
 # Set FastAPI endpoint
-endpoint = 'http://localhost:8000/predict'
+endpoint = 'http://127.0.0.1:8000/predict'
 #endpoint = 'http://host.docker.internal:8000/predict' # Specify this path for Dockerization to work
 
 # On charge notre modèle de prévision
