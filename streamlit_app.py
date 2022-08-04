@@ -67,12 +67,14 @@ if NUM_CLIENT !='':
 	#st.write(features)
 
 	explain_pred_TEST = st.button('TEST Lime dans API')
-	with st.spinner('Prediction in Progress. Please Wait...'):
-		output_lime = requests.post(endpoint_lime, json=client_json,
+
+	if explain_pred_TEST:
+		with st.spinner('Prediction in Progress. Please Wait...'):
+			output_lime = requests.post(endpoint_lime, json=client_json,
 						   timeout=8000)
 
-	import streamlit.components.v1 as components
-	components.html(output_lime.json()[0], height=250)
+		import streamlit.components.v1 as components
+		components.html(output_lime.json()[0], height=250)
 	
 
 
