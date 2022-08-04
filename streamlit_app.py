@@ -15,83 +15,97 @@ import pickle
 import matplotlib.pyplot as plt
 import requests
 
-st.title('Dashboard pour l\'octroi de crédits bancaires')
-
-# Set FastAPI endpoint
-#endpoint = 'http://127.0.0.1:8000/predict'
-endpoint = 'https://shielded-bastion-88611.herokuapp.com/predict' # Specify this path for Heroku deployment
-
-endpoint_lime = 'https://shielded-bastion-88611.herokuapp.com/lime'
-
-# On charge notre modèle de prévision
-model_pipeline = joblib.load('pipeline_bank_lgbm.joblib')
-
-# On a besoin du fichier de données 'train' pour obtenir les explanations de lime, récupéré au format pickle
-file_X_train = open("X_train_Nono2.pkl", "rb")
-donnees_train = pickle.load(file_X_train)
-file_X_train.close()
-
-# On importe les features importantes récupérées du modèle dans un format pickle
-file_features = open("features.pkl", "rb")
-features = pickle.load(file_features)
-file_features.close()
-
 # On récupère notre fichier clients pour obtenir les informations descriptives des clients
-file_clients = open("fichierClient.pkl", "rb")
-donnees_clients = pickle.load(file_clients)
+file_clients_descr = open("application_test.pkl", "rb") #fichier client avec les noms de colonne
+donnees_clients_descr = pickle.load(file_clients_descr)
 file_clients.close()
 
+# Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
+endpoint = 'http://127.0.0.1:8000/predict'
+# endpoint = 'https://shielded-bastion-88611.herokuapp.com/predict' # Specify this path for Heroku deployment
+
+endpoint_lime = 'http://127.0.0.1:8000/lime'
+# endpoint_lime = 'https://shielded-bastion-88611.herokuapp.com/lime' # Specify this path for Heroku deployment
+
+endpoint_client = 'http://127.0.0.1:8000/client'
+# endpoint_client = 'https://shielded-bastion-88611.herokuapp.com/client' # Specify this path for Heroku deployment
+
+endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
+# endpoint_client = 'https://shielded-bastion-88611.herokuapp.com/client' # Specify this path for Heroku deployment
+
+
+# Mise en page de l'application steamlit
+st.set_page_config(
+    page_title="Le Dashboard de Fatou",
+    page_icon="🧊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.extremelycoolapp.com/help',
+        'Report a bug': "https://www.extremelycoolapp.com/bug",
+        'About': "# This is a header. This is an *extremely* cool app!"
+    }
+)
+
+st.title('Dashboard pour l\'octroi de crédits bancaires')
+
 with st.sidebar:
-	NUM_CLIENT = st.number_input("Renseigner ci-dessous le numéro de client pour obtenir"
-								 " le dashboard associé à ce client")
+    NUM_CLIENT = st.number_input("Numéro du client", min_value=0,
+                                 help="Entrez le numéro de client de la base de données clients")
 
-	obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
+    client_json = {'num_client': NUM_CLIENT}
 
-if NUM_CLIENT !='':
-    #Il faudra rajouter un test pour voir si le client existe dans la base de données.
-	#ligne test qui permet d'afficher le dataframe en cas de tests unitaires
-	
-	st.write("Ci-dessous les résultats de la prédiction")
+    client_valide = requests.post(endpoint_client, json=client_json,
+                                  timeout=8000)
 
-	client_json = {'num_client': NUM_CLIENT}
+    if client_valide.json()[0]:
+        obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
+    else:
+        st.warning(
+            "Veuillez entrer un numéro de client valide pour obtenir des informations concernant la demande d'octroi de prêt")
+        obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non', disabled=True)
+if obtain_pred:
+    # Il faudra rajouter un test pour voir si le client existe dans la base de données.
+    # ligne test qui permet d'afficher le dataframe en cas de tests unitaires
 
-	with st.spinner('Prediction in Progress. Please Wait...'):
-		output = requests.post(endpoint, json=client_json,
-						   timeout=8000)
+    with st.spinner('Prediction in Progress. Please Wait...'):
+        previsions = requests.post(endpoint, json=client_json, timeout=8000)
 
-	st.write(output.json())
+    container_prev = st.empty()
+    with container_prev.container():
+        col1, col2 = st.columns([1, 4], gap="medium")
+
+        with col1:
+            if previsions.json()[0] == 0:
+                indicateur_pret = 'green'
+                message="Bravo, votre demande de crédit peut être acceptée"
+            else:
+                indicateur_pret = 'red'
+                message="Malheureusement, votre demande de crédit ne peut être acceptée"
+
+            fig, ax = plt.subplots()
+            ax.set(xlim=(-0.1, 0.1), ylim=(-0.1, 0.1))
+            a_circle = plt.Circle((0, 0), 0.1, facecolor=indicateur_pret)
+            ax.add_artist(a_circle)
+            plt.axis('off')
+            plt.grid(b=None)
+            st.pyplot(fig)
+            st.write(message)
+
+        with col2:
+            st.write("Ci-dessous les résultats de la prédiction ainsi que les données client")
+            st.write("La probabilité de faillite du client est de ", previsions.json()[1])
+
+            donnees_clients = requests.post(endpoint_client_data, json=client_json,
+                                            timeout=8000)
+
+            st.table(donnees_clients.json())
 
 
-	#Bouton permettant de générer les explanations du model
 
-	#st.write(features)
-
-	explain_pred_TEST = st.button('TEST Lime dans API')
-
-	if explain_pred_TEST:
-		with st.spinner('Prediction in Progress. Please Wait...'):
-			output_lime = requests.post(endpoint_lime, json=client_json,
-						   timeout=8000)
-
-		import streamlit.components.v1 as components
-		components.html(output_lime.json()[0], height=250)
-	
-
-
-
-
-
-	explain_pred = st.button('Cliquer ici pour obtenir des explications')
-
-	#Si l'utilisateur appuie sur le bouton explain predictions, on lui affiche les explications
-	if explain_pred:
-		with st.spinner('Generating explanations'): #permet d'informer l'utilisateur que le calcul prend un peu de temps
-			data = donnees_clients.loc[donnees_clients['SK_ID_CURR'] == 100028, features]
-			explainer = lime_tabular.LimeTabularExplainer(donnees_train,mode="classification",class_names=features)
-			exp = explainer.explain_instance(data.values[0],
-				model_pipeline.predict_proba, num_features=20)
-			mongraph_html = exp.as_html(predict_proba=False, show_predicted_value=True)
-			import streamlit.components.v1 as components
-			components.html(mongraph_html, height=1000)
-
-			st.pyplot(exp.as_pyplot_figure())
+    container_explain = st.empty()
+    with container_explain.expander("Cliquez ici pour obtenir des explications concernant cette décision"):
+        with st.spinner('Veuillez patienter, nous récupérons des données supplémentaires pour expliquer la décision...'):
+            output_lime = requests.post(endpoint_lime, json=client_json, timeout=8000)
+        import streamlit.components.v1 as components
+        components.html(output_lime.json()[0], height=200)
