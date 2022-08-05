@@ -1,7 +1,7 @@
 # =========================================
 # Dashboard pour l'octroi de crédits bancaires
 # Author: Fatima Meguellati
-# Last Modified: 03 Aout 2022
+# Last Modified: 05 Aout 2022
 # =========================================
 # Command to execute script locally: streamlit run app.py
 # Command to run Docker image: docker run -d -p 8501:8501 <streamlit-app-name>:latest
@@ -18,20 +18,22 @@ import requests
 # On récupère notre fichier clients pour obtenir les informations descriptives des clients
 file_clients_descr = open("application_test.pkl", "rb") #fichier client avec les noms de colonne
 donnees_clients_descr = pickle.load(file_clients_descr)
-file_clients.close()
+file_clients_descr.close()
+
+url = 'https://ocp7apicredit.herokuapp.com'
 
 # Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
-endpoint = 'http://127.0.0.1:8000/predict'
-# endpoint = 'https://shielded-bastion-88611.herokuapp.com/predict' # Specify this path for Heroku deployment
+# endpoint = 'http://127.0.0.1:8000/predict'
+endpoint = url+'/predict' # Specify this path for Heroku deployment
 
-endpoint_lime = 'http://127.0.0.1:8000/lime'
-# endpoint_lime = 'https://shielded-bastion-88611.herokuapp.com/lime' # Specify this path for Heroku deployment
+# endpoint_lime = 'http://127.0.0.1:8000/lime'
+endpoint_lime = url+'lime' # Specify this path for Heroku deployment
 
-endpoint_client = 'http://127.0.0.1:8000/client'
-# endpoint_client = 'https://shielded-bastion-88611.herokuapp.com/client' # Specify this path for Heroku deployment
+# endpoint_client = 'http://127.0.0.1:8000/client'
+endpoint_client = url+'/client' # Specify this path for Heroku deployment
 
-endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
-# endpoint_client = 'https://shielded-bastion-88611.herokuapp.com/client' # Specify this path for Heroku deployment
+# endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
+endpoint_client = url+'clientdata' # Specify this path for Heroku deployment
 
 
 # Mise en page de l'application steamlit
@@ -58,7 +60,12 @@ with st.sidebar:
     client_valide = requests.post(endpoint_client, json=client_json,
                                   timeout=8000)
 
+    attributs_client = ['NAME_CONTRACT_TYPE', 'CODE_GENDER', 'AMT_INCOME_TOTAL',
+                        'NAME_INCOME_TYPE','NAME_FAMILY_STATUS','ORGANIZATION_TYPE']
+
     if client_valide.json()[0]:
+        choix_attributs = st.multiselect("Sélectionnez les attributs du client à afficher", attributs_client)
+        info_client = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT, choix_attributs]
         obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
     else:
         st.warning(
@@ -93,13 +100,11 @@ if obtain_pred:
             st.write(message)
 
         with col2:
-            st.write("Ci-dessous les résultats de la prédiction ainsi que les données client")
             st.write("La probabilité de faillite du client est de ", previsions.json()[1])
 
-            donnees_clients = requests.post(endpoint_client_data, json=client_json,
-                                            timeout=8000)
+            #donnees_clients = requests.post(endpoint_client_data, json=client_json, timeout=8000)
 
-            st.table(donnees_clients.json())
+            st.dataframe(info_client)
 
 
 
