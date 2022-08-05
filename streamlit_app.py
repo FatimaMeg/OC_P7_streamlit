@@ -20,20 +20,20 @@ file_clients_descr = open("application_test.pkl", "rb") #fichier client avec les
 donnees_clients_descr = pickle.load(file_clients_descr)
 file_clients_descr.close()
 
-url = 'https://ocp7apicredit.herokuapp.com'
+#url = 'https://ocp7apicredit.herokuapp.com'
 
 # Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
 # endpoint = 'http://127.0.0.1:8000/predict'
-endpoint = url+'/predict' # Specify this path for Heroku deployment
+endpoint = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
 
 # endpoint_lime = 'http://127.0.0.1:8000/lime'
-endpoint_lime = url+'lime' # Specify this path for Heroku deployment
+endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path for Heroku deployment
 
 # endpoint_client = 'http://127.0.0.1:8000/client'
-endpoint_client = url+'/client' # Specify this path for Heroku deployment
+endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
 
 # endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
-endpoint_client = url+'clientdata' # Specify this path for Heroku deployment
+endpoint_client = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
 
 # Mise en page de l'application steamlit
