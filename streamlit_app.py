@@ -33,7 +33,7 @@ endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path f
 endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
 
 # endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
-endpoint_client = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
+endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
 
 # Mise en page de l'application steamlit
