@@ -10,3 +10,5 @@ requests==2.24.0
 seaborn
 numpy
 json5
+jsonpickle==2.2.0
+jsonschema
