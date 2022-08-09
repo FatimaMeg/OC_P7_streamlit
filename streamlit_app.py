@@ -14,26 +14,30 @@ import streamlit.components.v1 as components
 import pickle
 import matplotlib.pyplot as plt
 import requests
+import seaborn as sns
+import pandas as pd
+import numpy as np
+import json
 
-# On récupère notre fichier clients pour obtenir les informations descriptives des clients
-file_clients_descr = open("application_test.pkl", "rb") #fichier client avec les noms de colonne
+#On récupère notre fichier clients pour obtenir les informations descriptives des clients
+file_clients_descr = open("clients_test_descr.pkl", "rb") #fichier client initiale
 donnees_clients_descr = pickle.load(file_clients_descr)
 file_clients_descr.close()
 
 #url = 'https://ocp7apicredit.herokuapp.com'
 
 # Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
-# endpoint = 'http://127.0.0.1:8000/predict'
-endpoint = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
+endpoint_predict = 'http://127.0.0.1:8000/predict'
+#endpoint_predict = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
 
-# endpoint_lime = 'http://127.0.0.1:8000/lime'
-endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path for Heroku deployment
+endpoint_lime = 'http://127.0.0.1:8000/lime'
+#endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path for Heroku deployment
 
-#endpoint_client = 'http://127.0.0.1:8000/client'
-endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
+endpoint_client = 'http://127.0.0.1:8000/client'
+#endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
 
-# endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
-endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
+endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
+#endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
 endpoint_client_graph = 'http://127.0.0.1:8000/graphs'
 #endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
@@ -127,9 +131,69 @@ with tab1:
 
 
 
-    container_explain = st.empty()
-    with container_explain.expander("Cliquez ici pour obtenir des explications concernant cette décision"):
-        with st.spinner('Veuillez patienter, nous récupérons des données supplémentaires pour expliquer la décision...'):
-            output_lime = requests.post(endpoint_lime, json=client_json, timeout=8000)
-        import streamlit.components.v1 as components
-        components.html(output_lime.json()[0], height=200)
+        #2ème bloc qui contient les explications de la prévision avec un expander pour faire patienter l'utilisateur le temps du chargement
+        container_explain = st.empty()
+        with container_explain.expander("Cliquez ici pour obtenir des explications concernant cette décision"):
+            with st.spinner('Veuillez patienter, nous récupérons des données supplémentaires pour expliquer la décision...'):
+                output_lime = requests.post(endpoint_lime, json=client_json, timeout=8000)
+            import streamlit.components.v1 as components
+            components.html(output_lime.json()[0], height=200)
+
+
+
+
+with tab2:
+    st.header("Données clients")
+    
+    if obtain_pred:
+        n_bins = 20
+
+        pas = (donnees_clients_descr["EXT_SOURCE_2"].max() - donnees_clients_descr["EXT_SOURCE_2"].min())/n_bins
+        client_val = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT, 'EXT_SOURCE_2'] 
+        
+        n_patches = int(client_val.tolist()[0]/pas)
+
+        fig, ax = plt.subplots()
+        ax = sns.histplot(x='EXT_SOURCE_2', data=donnees_clients_descr, bins=n_bins)
+        ax.patches[n_patches].set_facecolor('salmon')
+        st.pyplot(fig)
+
+with tab3:
+    obtain_graph = st.button("Cliquer ici pour obtenir les graphes")
+    if obtain_graph:
+        from bokeh.plotting import figure, show
+        from bokeh.models import ColumnDataSource
+        from bokeh import layouts
+        from bokeh.layouts import gridplot
+        from bokeh.layouts import row
+
+
+        n_bins = 20
+        graph=[]
+
+        attributs_graphe = ['EXT_SOURCE_2', 'EXT_SOURCE_3','AMT_ANNUITY']
+
+        j=0
+        for i in attributs_graphe:
+            j=j+1
+            arr_hist = "arr_hist"+str(j)
+            edges = "edges"+str(j)
+            h = "h"+str(j)
+            arr_hist, edges = np.histogram(donnees_clients_descr[i], bins = n_bins, 
+                                             range = [donnees_clients_descr[i].min(),donnees_clients_descr[i].max()])
+        
+            hist = pd.DataFrame({i: arr_hist, 
+                             'left': edges[:-1], 
+                            'right': edges[1:]})
+
+            h = figure(plot_height = 600, plot_width = 600, 
+                             title = i, 
+                             x_axis_label = i, 
+                             y_axis_label = 'Nombre')
+
+            h.quad(bottom=0, top=hist[i],
+                             left=hist['left'], right=hist['right'], 
+                             fill_color='blue', line_color='black')
+                
+            graph.append(h)
+        st.bokeh_chart(gridplot([graph],width=250, height=250) )
