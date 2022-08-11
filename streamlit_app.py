@@ -5,8 +5,6 @@
 # =========================================
 # Command to execute script locally: streamlit run app.py
 
-
-
 import joblib
 import streamlit as st
 from lime import lime_tabular
@@ -19,10 +17,15 @@ import pandas as pd
 import numpy as np
 import json
 
-#On récupère notre fichier clients pour obtenir les informations descriptives des clients
+#On récupère notre fichier clients pour obtenir les informations descriptives du client à prévoir
 file_clients_descr = open("clients_test_descr.pkl", "rb") #fichier client initiale
 donnees_clients_descr = pickle.load(file_clients_descr)
 file_clients_descr.close()
+
+#On récupère notre fichier clients pour obtenir les informations descriptives des clients de la base test pour comparaison
+file_clients_descr2 = open("clients_train_descr.pkl", "rb") #fichier client initiale
+donnees_clients_train_descr = pickle.load(file_clients_descr2)
+file_clients_descr2.close()
 
 #url = 'https://ocp7apicredit.herokuapp.com'
 
@@ -55,37 +58,41 @@ st.set_page_config(
     }
 )
 
-tab1, tab2, tab3= st.tabs(["Prévision", "Client", "Onglet tests"])
+# On définit ci-dessous nos variables de session pour maitriser le contrôle des différents boutons / liste déroulante...
+if 'numclient' not in st.session_state: #numéro de client par défaut = 0
+    st.session_state['numclient'] = 0
+
+if 'rerunlime' not in st.session_state: # évite de relancer le lime à chaque action sur la page
+    st.session_state['rerunlime'] = False
+
+if 'output_lime' not in st.session_state: # sauvegarde les données du lime si déjà exécutées
+    st.session_state['output_lime'] = ''
+
+liste_client = pd.concat([donnees_clients_descr['SK_ID_CURR'],pd.Series([0])]) # pour la liste déroulante, on créée un client fictif '0' où rien ne se passe
+
+def rerun():
+    st.session_state['rerunlime'] = True # A chaque fois que l'on change de client, on relance le lime
+
+
+with st.sidebar:
+    
+    NUM_CLIENT = st.selectbox("Numéro du client", options=liste_client, key = 'numclient',
+                                help="Entrez le numéro de client de la base de données clients", on_change=rerun)
+
+    client_json = {'num_client': NUM_CLIENT}
+
+    client_valide = requests.post(endpoint_client, json=client_json,
+                                timeout=8000)
+
+st.header('Dashboard pour l\'octroi de crédits bancaires')
+
+tab1, tab2, tab3= st.tabs(["Prévision", "Analyses comparatives", "Onglet test"])
 
 with tab1:
-    st.header('Dashboard pour l\'octroi de crédits bancaires')
-
-    with st.sidebar:
-        NUM_CLIENT = st.number_input("Numéro du client", min_value=0,
-                                    help="Entrez le numéro de client de la base de données clients")
-
-        client_json = {'num_client': NUM_CLIENT}
-
-        client_valide = requests.post(endpoint_client, json=client_json,
-                                    timeout=8000)
-
-        attributs_client = ['CODE_GENDER', 'AMT_INCOME_TOTAL',
-                            'AMT_CREDIT','DAYS_BIRTH']
-
-        if client_valide.json()[0]:
-            choix_attributs = st.multiselect("Sélectionnez les attributs du client à afficher", attributs_client)
-            #info_client = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT, choix_attributs]
-            
-            obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non')
-        else:
-            st.warning(
-                "Veuillez entrer un numéro de client valide pour obtenir des informations concernant la demande d'octroi de prêt")
-            obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non', disabled=True)
+    #st.header('Dashboard pour l\'octroi de crédits bancaires')
 
     #Lorsqu'on clique sur le bouton on obtient les prédictions
-    if obtain_pred:
-        
-
+    if client_valide.json()[0]:
         with st.spinner('Prediction in Progress. Please Wait...'):
             previsions = requests.post(endpoint_predict, json=client_json, timeout=8000)
 
@@ -115,13 +122,11 @@ with tab1:
                 
                 #Affichage message demande de crédit acceptée ou non
                 st.write(message)
-
+                st.write("La probabilité de faillite du client est de ", previsions.json()[1])
             
             #2ème colonne avec données descriptives
             with col2:
-                st.write("La probabilité de faillite du client est de ", previsions.json()[1])
-
-                #On récupère les données via une requête au format JSON, et on remet sous format Dataframe
+                choix_attributs = st.multiselect("Sélectionnez les attributs du client à afficher", donnees_clients_descr.columns )
                 donnees_clients = requests.post(endpoint_client_data, json=client_json, timeout=8000)
                 info_client = pd.read_json(donnees_clients.json()[0], orient='records')
                 
@@ -134,66 +139,79 @@ with tab1:
         #2ème bloc qui contient les explications de la prévision avec un expander pour faire patienter l'utilisateur le temps du chargement
         container_explain = st.empty()
         with container_explain.expander("Cliquez ici pour obtenir des explications concernant cette décision"):
-            with st.spinner('Veuillez patienter, nous récupérons des données supplémentaires pour expliquer la décision...'):
-                output_lime = requests.post(endpoint_lime, json=client_json, timeout=8000)
-            import streamlit.components.v1 as components
-            components.html(output_lime.json()[0], height=200)
+            if st.session_state.rerunlime == True:
+                with st.spinner('Veuillez patienter, nous récupérons des données supplémentaires pour expliquer la décision...'):
+                    st.session_state['output_lime'] = requests.post(endpoint_lime, json=client_json, timeout=8000)
+                    st.session_state['rerunlime'] = False
+            
+            components.html(st.session_state['output_lime'].json()[0], height=200)
+
+    else:
+        st.warning(
+            "Veuillez sélectionner un numéro de client dans le panneau latéral gauche pour obtenir des informations concernant la demande d'octroi de prêt")
+        #obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non', disabled=True)
 
 
-
-
-with tab2:
-    st.header("Données clients")
-    
-    if obtain_pred:
-        n_bins = 20
-
-        pas = (donnees_clients_descr["EXT_SOURCE_2"].max() - donnees_clients_descr["EXT_SOURCE_2"].min())/n_bins
-        client_val = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT, 'EXT_SOURCE_2'] 
-        
-        n_patches = int(client_val.tolist()[0]/pas)
-
-        fig, ax = plt.subplots()
-        ax = sns.histplot(x='EXT_SOURCE_2', data=donnees_clients_descr, bins=n_bins)
-        ax.patches[n_patches].set_facecolor('salmon')
-        st.pyplot(fig)
 
 with tab3:
-    obtain_graph = st.button("Cliquer ici pour obtenir les graphes")
-    if obtain_graph:
-        from bokeh.plotting import figure, show
-        from bokeh.models import ColumnDataSource
-        from bokeh import layouts
-        from bokeh.layouts import gridplot
-        from bokeh.layouts import row
+    if client_valide.json()[0]:
+        st.write("Onglet pour réaliser quelques tests supplémentaires")
 
+    else:
+        st.warning(
+            "Veuillez sélectionner un numéro de client dans le panneau latéral gauche pour obtenir des informations concernant la demande d'octroi de prêt")
 
-        n_bins = 20
-        graph=[]
+with tab2:
+    if client_valide.json()[0]:
+    
+        #On récupère toutes les features possibles, et l'utilisateur peut en choisir un certain nombre pour obtenir des boxplots
+        features_choisies = st.multiselect("Choisissez les variables", donnees_clients_descr.columns
+        )
 
-        attributs_graphe = ['EXT_SOURCE_2', 'EXT_SOURCE_3','AMT_ANNUITY']
-
-        j=0
-        for i in attributs_graphe:
-            j=j+1
-            arr_hist = "arr_hist"+str(j)
-            edges = "edges"+str(j)
-            h = "h"+str(j)
-            arr_hist, edges = np.histogram(donnees_clients_descr[i], bins = n_bins, 
-                                             range = [donnees_clients_descr[i].min(),donnees_clients_descr[i].max()])
+        #On prépare un dataframe qui regroupe toutes les données : le client à comparer ainsi que les données test avec qui on compare
+        # 1. On créé une colonne avec la target pour notre client à comparer ainsi qu'une colonne target categorielle
+        monclient = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT]
+        monclient['TARGET'] = [previsions.json()[0]]
         
-            hist = pd.DataFrame({i: arr_hist, 
-                             'left': edges[:-1], 
-                            'right': edges[1:]})
+        # 2. On concatène nos deux databases pour afficher toutes les données dans le même boxplot
+        mesdonneesclients = pd.concat([donnees_clients_train_descr,monclient])
 
-            h = figure(plot_height = 600, plot_width = 600, 
-                             title = i, 
-                             x_axis_label = i, 
-                             y_axis_label = 'Nombre')
+        # 3. On créé une colonne avec la target categorielle
+        mesdonneesclients['TARGET_cat'] = mesdonneesclients['TARGET'].astype('category')
 
-            h.quad(bottom=0, top=hist[i],
-                             left=hist['left'], right=hist['right'], 
-                             fill_color='blue', line_color='black')
-                
-            graph.append(h)
-        st.bokeh_chart(gridplot([graph],width=250, height=250) )
+        
+        # On définit les éléments de mise en page des boxplots
+        # 1. On définit le nombre de boxplots par ligne (max 3 à 4 sinon cela devient illisible)
+        meanprops = {'marker':'o', 'markeredgecolor':'black',
+                'markerfacecolor':'green'}
+        
+        # 2. nombre de boxplots par ligne, max 3-4 sinon illisible
+        longueur_ligne = 2 
+
+        # 3. On calcule le bon nombre de lignes de la grille
+        if len(features_choisies)%longueur_ligne == 0: #Si le nombre de variables est un multiple de longueur_ligne
+            nb_lignes = len(features_choisies)//longueur_ligne # nblignes de la grille = quotient div euclidienne nb de variables par longueur ligne
+        else:
+            nb_lignes = len(features_choisies)//longueur_ligne+1 # s'il y a un reste non nul, alors on rajoute une ligne
+        
+        st.write(mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT])
+        
+        info_comparatives = st.button("Obtenir des infos")
+
+        if info_comparatives:
+            fig, ax = plt.subplots()
+            
+            for i in range(len(features_choisies)):
+                plt.subplot(nb_lignes,longueur_ligne,i+1)
+                ax = sns.boxplot(x=features_choisies[i], y="TARGET_cat", showmeans=True, 
+                                meanprops=meanprops, data=mesdonneesclients, showfliers = True)
+                ax = sns.swarmplot(x=features_choisies[i], y="TARGET_cat", data=mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT], 
+                                    color ='firebrick',size=8, linewidth=2, edgecolor='black')
+
+            fig.tight_layout()
+
+            st.pyplot(fig)
+
+    else:
+        st.warning(
+            "Veuillez sélectionner un numéro de client dans le panneau latéral gauche pour obtenir des informations concernant la demande d'octroi de prêt")
