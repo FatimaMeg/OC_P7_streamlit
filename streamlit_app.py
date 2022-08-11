@@ -204,7 +204,7 @@ with tab2:
             for i in range(len(features_choisies)):
                 plt.subplot(nb_lignes,longueur_ligne,i+1)
                 ax = sns.boxplot(x=features_choisies[i], y="TARGET_cat", showmeans=True, 
-                                meanprops=meanprops, data=mesdonneesclients, showfliers = True)
+                                meanprops=meanprops, data=mesdonneesclients, showfliers = False)
                 ax = sns.swarmplot(x=features_choisies[i], y="TARGET_cat", data=mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT], 
                                     color ='firebrick',size=8, linewidth=2, edgecolor='black')
 
