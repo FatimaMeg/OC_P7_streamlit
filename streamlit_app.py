@@ -16,6 +16,7 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 import json
+import plotly.graph_objects as go
 
 #On récupère notre fichier clients pour obtenir les informations descriptives du client à prévoir
 file_clients_descr = open("clients_test_descr.pkl", "rb") #fichier client initiale
@@ -84,11 +85,6 @@ with st.sidebar:
     client_valide = requests.post(endpoint_client, json=client_json,
                                 timeout=8000)
 
-    st.write("Test affichage prev")
-    previsions = requests.post(endpoint_predict, json={'num_client': 100107}, timeout=8000)
-    st.write(previsions.json()["resultat"])
-    st.write(previsions.json()["score"])
-
 st.header('Dashboard pour l\'octroi de crédits bancaires')
 
 tab1, tab2, tab3= st.tabs(["Prévision", "Analyses comparatives", "Onglet test"])
@@ -105,7 +101,7 @@ with tab1:
         container_prev = st.empty()
         with container_prev.container():
             #On créé deux colonnes, une avec le résultat prévision et l'autre avec données descriptives
-            col1, col2 = st.columns([1, 4], gap="medium")
+            col1, col2 = st.columns([0.75, 1], gap="medium")
 
             #1ere colonne avec résultats prévisions
             with col1:
@@ -115,19 +111,25 @@ with tab1:
                 else:
                     indicateur_pret = 'red'
                     message="Malheureusement, votre demande de crédit ne peut être acceptée"
+                st.write(message)                
+                #Affichage jauge
+                fig = go.Figure(go.Indicator(
+                    mode = "gauge+number+delta",
+                    value = previsions.json()["score"]*100,
+                    delta = {'reference': 50, 'increasing':{'color': "red"}, 'decreasing':{'color': "green"}},
+                    domain = {'x': [0, 1], 'y': [0, 1]},
+                    number = {'suffix': '%'},
+                    gauge = {'axis': {'range': [None, 100]},
+                            'steps' : [
+                            {'range': [0, 40], 'color': "green"},
+                            {'range': [40, 50], 'color': "orange"},
+                            {'range': [50, 100], 'color': "red"}],
+                            'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 51},
+                            'bar': {'color': "gray"}},
+                    title = {'text': "Score de faillite"}))
 
-                #Affichage du cercle rouge ou vert en fonction de la prevision
-                fig, ax = plt.subplots()
-                ax.set(xlim=(-0.1, 0.1), ylim=(-0.1, 0.1))
-                a_circle = plt.Circle((0, 0), 0.1, facecolor=indicateur_pret)
-                ax.add_artist(a_circle)
-                plt.axis('off')
-                plt.grid(b=None)
-                st.pyplot(fig)
-                
-                #Affichage message demande de crédit acceptée ou non
-                st.write(message)
-                st.write("La probabilité de faillite du client est de ", previsions.json()["score"])
+                #fig.show()
+                st.plotly_chart(fig, use_container_width=True)
             
             #2ème colonne avec données descriptives
             with col2:
@@ -198,7 +200,7 @@ with tab2:
         else:
             nb_lignes = len(features_choisies)//longueur_ligne+1 # s'il y a un reste non nul, alors on rajoute une ligne
         
-        st.write(mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT])
+        #st.write(mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT])
         
         info_comparatives = st.button("Obtenir des infos")
 

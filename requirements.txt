@@ -12,3 +12,4 @@ numpy
 json5
 jsonpickle==2.2.0
 jsonschema
+plotly
