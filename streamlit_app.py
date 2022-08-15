@@ -43,7 +43,7 @@ endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this pa
 endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
 #endpoint_client_graph = 'http://127.0.0.1:8000/graphs'
-endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
+endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/graphs' # Specify this path for Heroku deployment
 
 # Mise en page de l'application streamlit
 st.set_page_config(
@@ -84,6 +84,11 @@ with st.sidebar:
     client_valide = requests.post(endpoint_client, json=client_json,
                                 timeout=8000)
 
+    st.write("Test affichage prev")
+    previsions = requests.post(endpoint_predict, json={'num_client': 100107}, timeout=8000)
+    st.write(previsions.json()["resultat"])
+    st.write(previsions.json()["score"])
+
 st.header('Dashboard pour l\'octroi de crédits bancaires')
 
 tab1, tab2, tab3= st.tabs(["Prévision", "Analyses comparatives", "Onglet test"])
@@ -104,7 +109,7 @@ with tab1:
 
             #1ere colonne avec résultats prévisions
             with col1:
-                if previsions.json()[0] == 0:
+                if previsions.json()["resultat"] == 0:
                     indicateur_pret = 'green'
                     message="Bravo, votre demande de crédit peut être acceptée"
                 else:
@@ -122,7 +127,7 @@ with tab1:
                 
                 #Affichage message demande de crédit acceptée ou non
                 st.write(message)
-                st.write("La probabilité de faillite du client est de ", previsions.json()[0])
+                st.write("La probabilité de faillite du client est de ", previsions.json()["score"])
             
             #2ème colonne avec données descriptives
             with col2:
@@ -171,7 +176,7 @@ with tab2:
         #On prépare un dataframe qui regroupe toutes les données : le client à comparer ainsi que les données test avec qui on compare
         # 1. On créé une colonne avec la target pour notre client à comparer ainsi qu'une colonne target categorielle
         monclient = donnees_clients_descr.loc[donnees_clients_descr['SK_ID_CURR'] == NUM_CLIENT]
-        monclient['TARGET'] = [previsions.json()[0]]
+        monclient['TARGET'] = [previsions.json()["resultat"]]
         
         # 2. On concatène nos deux databases pour afficher toutes les données dans le même boxplot
         mesdonneesclients = pd.concat([donnees_clients_train_descr,monclient])
