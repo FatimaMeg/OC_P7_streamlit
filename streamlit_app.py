@@ -43,7 +43,7 @@ endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this pa
 endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
 #endpoint_client_graph = 'http://127.0.0.1:8000/graphs'
-endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/graphs' # Specify this path for Heroku deployment
+endpoint_client_graph = 'https://ocp7apicredit.herokuapp.com/graphs' # Specify this path for Heroku deployment
 
 # Mise en page de l'application streamlit
 st.set_page_config(
@@ -138,7 +138,7 @@ with tab1:
                 # on n'affiche que les attributs sélectionnés dans le sidebar
                 info_client_choixattributs = info_client.loc[:, choix_attributs]
                 st.dataframe(info_client_choixattributs)
-
+                
 
 
         #2ème bloc qui contient les explications de la prévision avec un expander pour faire patienter l'utilisateur le temps du chargement
@@ -170,8 +170,7 @@ with tab2:
     if client_valide.json()[0]:
     
         #On récupère toutes les features possibles, et l'utilisateur peut en choisir un certain nombre pour obtenir des boxplots
-        features_choisies = st.multiselect("Choisissez les variables", donnees_clients_descr.columns
-        )
+        features_choisies = st.multiselect("Choisissez les variables", donnees_clients_descr.columns)
 
         #On prépare un dataframe qui regroupe toutes les données : le client à comparer ainsi que les données test avec qui on compare
         # 1. On créé une colonne avec la target pour notre client à comparer ainsi qu'une colonne target categorielle
@@ -191,7 +190,7 @@ with tab2:
                 'markerfacecolor':'green'}
         
         # 2. nombre de boxplots par ligne, max 3-4 sinon illisible
-        longueur_ligne = 2 
+        longueur_ligne = 3 
 
         # 3. On calcule le bon nombre de lignes de la grille
         if len(features_choisies)%longueur_ligne == 0: #Si le nombre de variables est un multiple de longueur_ligne
@@ -208,9 +207,9 @@ with tab2:
             
             for i in range(len(features_choisies)):
                 plt.subplot(nb_lignes,longueur_ligne,i+1)
-                ax = sns.boxplot(x=features_choisies[i], y="TARGET_cat", showmeans=True, 
+                ax = sns.boxplot(x="TARGET_cat", y=features_choisies[i], showmeans=True, 
                                 meanprops=meanprops, data=mesdonneesclients, showfliers = False)
-                ax = sns.swarmplot(x=features_choisies[i], y="TARGET_cat", data=mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT], 
+                ax = sns.swarmplot(x="TARGET_cat", y=features_choisies[i], data=mesdonneesclients.loc[mesdonneesclients['SK_ID_CURR']==NUM_CLIENT], 
                                     color ='firebrick',size=8, linewidth=2, edgecolor='black')
 
             fig.tight_layout()
