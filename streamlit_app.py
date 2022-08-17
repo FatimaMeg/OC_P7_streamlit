@@ -31,6 +31,7 @@ file_clients_descr2.close()
 #url = 'https://ocp7apicredit.herokuapp.com'
 
 # Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
+
 #endpoint_predict = 'http://127.0.0.1:8000/predict'
 endpoint_predict = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
 
@@ -87,7 +88,7 @@ with st.sidebar:
 
 st.header('Dashboard pour l\'octroi de crédits bancaires')
 
-tab1, tab2, tab3= st.tabs(["Prévision", "Analyses comparatives", "Onglet test"])
+tab1, tab2= st.tabs(["Prévision", "Analyses comparatives"])
 
 with tab1:
     #st.header('Dashboard pour l\'octroi de crédits bancaires')
@@ -159,14 +160,6 @@ with tab1:
         #obtain_pred = st.button('Cliquer ici pour connaitre la décision d\'accorder le prêt ou non', disabled=True)
 
 
-
-with tab3:
-    if client_valide.json()[0]:
-        st.write("Onglet pour réaliser quelques tests supplémentaires")
-
-    else:
-        st.warning(
-            "Veuillez sélectionner un numéro de client dans le panneau latéral gauche pour obtenir des informations concernant la demande d'octroi de prêt")
 
 with tab2:
     if client_valide.json()[0]:
