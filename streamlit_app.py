@@ -31,20 +31,20 @@ file_clients_descr2.close()
 #url = 'https://ocp7apicredit.herokuapp.com'
 
 # Set FastAPI endpoints : un pour les prédictions, un autre pour les explications
-endpoint_predict = 'http://127.0.0.1:8000/predict'
-#endpoint_predict = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
+#endpoint_predict = 'http://127.0.0.1:8000/predict'
+endpoint_predict = 'https://ocp7apicredit.herokuapp.com/predict' # Specify this path for Heroku deployment
 
-endpoint_lime = 'http://127.0.0.1:8000/lime'
-#endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path for Heroku deployment
+#endpoint_lime = 'http://127.0.0.1:8000/lime'
+endpoint_lime = 'https://ocp7apicredit.herokuapp.com/lime' # Specify this path for Heroku deployment
 
-endpoint_client = 'http://127.0.0.1:8000/client'
-#endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
+#endpoint_client = 'http://127.0.0.1:8000/client'
+endpoint_client = 'https://ocp7apicredit.herokuapp.com/client' # Specify this path for Heroku deployment
 
-endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
-#endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
+#endpoint_client_data = 'http://127.0.0.1:8000/clientdata'
+endpoint_client_data = 'https://ocp7apicredit.herokuapp.com/clientdata' # Specify this path for Heroku deployment
 
-endpoint_client_graph = 'http://127.0.0.1:8000/graphs'
-#endpoint_client_graph = 'https://ocp7apicredit.herokuapp.com/graphs' # Specify this path for Heroku deployment
+#endpoint_client_graph = 'http://127.0.0.1:8000/graphs'
+endpoint_client_graph = 'https://ocp7apicredit.herokuapp.com/graphs' # Specify this path for Heroku deployment
 
 # Mise en page de l'application streamlit
 st.set_page_config(
